@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Weighted GPA & Grade Calculator</title>
+<script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50 min-h-screen p-4">
+<div class="max-w-4xl mx-auto">
+  <h1 class="text-3xl font-bold text-center text-gray-800 mb-2">Weighted GPA Calculator</h1>
+  <p class="text-center text-gray-500 mb-6 text-sm">Track courses, compute GPA in real-time, and run what-if scenarios</p>
+
+  <!-- GPA display -->
+  <div class="bg-white rounded-xl shadow p-6 mb-6 text-center">
+    <div class="text-sm text-gray-500 mb-1">Current GPA (4.0 Scale)</div>
+    <div id="gpa-display" class="text-6xl font-black text-indigo-600">—</div>
+    <div id="gpa-sub" class="text-sm text-gray-400 mt-1"></div>
+  </div>
+
+  <!-- Grade point table -->
+  <details class="bg-white rounded-xl shadow mb-6 overflow-hidden">
+    <summary class="px-6 py-4 font-semibold text-gray-700 cursor-pointer select-none hover:bg-gray-50">Grade Point Lookup Table</summary>
+    <div class="overflow-x-auto px-6 pb-4">
+      <table class="w-full text-sm text-center" role="table" aria-label="Grade point lookup table">
+        <thead>
+          <tr class="bg-gray-100">
+            <th class="py-2 px-3 rounded-tl">Grade</th>
+            <th class="py-2 px-3">A+</th><th class="py-2 px-3">A</th><th class="py-2 px-3">A-</th>
+            <th class="py-2 px-3">B+</th><th class="py-2 px-3">B</th><th class="py-2 px-3">B-</th>
+            <th class="py-2 px-3">C+</th><th class="py-2 px-3">C</th><th class="py-2 px-3">C-</th>
+            <th class="py-2 px-3">D</th><th class="py-2 px-3 rounded-tr">F</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="py-2 px-3 font-medium text-gray-700">Points</td>
+            <td class="py-2 px-3">4.0</td><td class="py-2 px-3">4.0</td><td class="py-2 px-3">3.7</td>
+            <td class="py-2 px-3">3.3</td><td class="py-2 px-3">3.0</td><td class="py-2 px-3">2.7</td>
+            <td class="py-2 px-3">2.3</td><td class="py-2 px-3">2.0</td><td class="py-2 px-3">1.7</td>
+            <td class="py-2 px-3">1.0</td><td class="py-2 px-3">0.0</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </details>
+
+  <!-- Tabs -->
+  <div class="flex gap-2 mb-4">
+    <button id="tab-current" onclick="switchTab('current')" class="px-4 py-2 rounded-lg font-medium bg-indigo-600 text-white text-sm" aria-pressed="true">Current Courses</button>
+    <button id="tab-whatif" onclick="switchTab('whatif')" class="px-4 py-2 rounded-lg font-medium bg-white text-gray-600 border border-gray-300 text-sm" aria-pressed="false">What-If Scenario</button>
+  </div>
+
+  <!-- Current Courses Panel -->
+  <div id="panel-current">
+    <!-- Semester selector + Add form -->
+    <div class="bg-white rounded-xl shadow p-6 mb-4">
+      <div class="flex flex-wrap items-end gap-3 mb-4">
+        <div class="flex-1 min-w-[140px]">
+          <label for="semester-sel" class="block text-xs font-medium text-gray-600 mb-1">Semester</label>
+          <input id="semester-sel" type="text" placeholder="e.g. Fall 2024" value="Fall 2024" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400" aria-label="Semester name">
+        </div>
+        <div class="flex-1 min-w-[180px]">
+          <label for="course-name" class="block text-xs font-medium text-gray-600 mb-1">Course Name</label>
+          <input id="course-name" type="text" placeholder="e.g. Calculus I" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400" aria-label="Course name">
+        </div>
+        <div class="w-20">
+          <label for="course-credits" class="block text-xs font-medium text-gray-600 mb-1">Credits</label>
+          <input id="course-credits" type="number" min="0.5" max="12" step="0.5" value="3" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400" aria-label="Credit hours">
+        </div>
+        <div class="w-28">
+          <label for="course-grade" class="block text-xs font-medium text-gray-600 mb-1">Letter Grade</label>
+          <select id="course-grade" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400" aria-label="Letter grade">
+            <option>A+</option><option>A</option><option>A-</option>
+            <option>B+</option><option selected>B</option><option>B-</option>
+            <option>C+</option><option>C</option><option>C-</option>
+            <option>D</option><option>F</option>
+          </select>
+        </div>
+        <div class="w-24">
+          <label for="course-pct" class="block text-xs font-medium text-gray-600 mb-1">% (optional)</label>
+          <input id="course-pct" type="number" min="0" max="100" step="0.1" placeholder="e.g. 88" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400" aria-label="Percentage score">
+        </div>
+        <button onclick="addCourse(false)" class="px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-400 whitespace-nowrap" aria-label="Add course">+ Add Course</button>
+      </div>
+    </div>
+
+    <!-- Course list -->
+    <div id="course-list" class="space-y-2"></div>
+    <p id="no-courses" class="text-center text-gray-400 py-8 text-sm">No courses added yet. Add your first course above.</p>
+
+    <!-- Export/Import -->
+    <div class="flex flex-wrap gap-3 mt-4">
+      <button onclick="exportData()" class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-400" aria-label="Export courses as JSON">Export JSON</button>
+      <label class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-200 cursor-pointer focus-within:ring-2 focus-within:ring-gray-400">
+        Import JSON
+        <input type="file" accept=".json" onchange="importData(event)" class="sr-only" aria-label="Import courses from JSON file">
+      </label>
+    </div>
+  </div>
+
+  <!-- What-If Panel -->
+  <div id="panel-whatif" class="hidden">
+    <div class="bg-yellow-50 border border-yellow-200 rounded-xl p-4 mb-4 text-sm text-yellow-800">
+      These are <strong>hypothetical</strong> future courses. They do not affect your saved data.
+    </div>
+    <div class="bg-white rounded-xl shadow p-6 mb-4">
+      <div class="flex flex-wrap items-end gap-3 mb-4">
+        <div class="flex-1 min-w-[180px]">
+          <label for="wi-name" class="block text-xs font-medium text-gray-600 mb-1">Course Name</label>
+          <input id="wi-name" type="text" placeholder="e.g. Physics II" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-yellow-400" aria-label="What-if course name">
+        </div>
+        <div class="w-20">
+          <label for="wi-credits" class="block text-xs font-medium text-gray-600 mb-1">Credits</label>
+          <input id="wi-credits" type="number" min="0.5" max="12" step="0.5" value="3" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-yellow-400" aria-label="What-if credit hours">
+        </div>
+        <div class="w-28">
+          <label for="wi-grade" class="block text-xs font-medium text-gray-600 mb-1">Grade</label>
+          <select id="wi-grade" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-yellow-400" aria-label="What-if letter grade">
+            <option>A+</option><option>A</option><option>A-</option>
+            <option>B+</option><option selected>B</option><option>B-</option>
+            <option>C+</option><option>C</option><option>C-</option>
+            <option>D</option><option>F</option>
+          </select>
+        </div>
+        <button onclick="addCourse(true)" class="px-4 py-2 bg-yellow-500 text-white rounded-lg text-sm font-medium hover:bg-yellow-600 focus:outline-none focus:ring-2 focus:ring-yellow-400 whitespace-nowrap" aria-label="Add what-if course">+ Add Scenario Course</button>
+      </div>
+    </div>
+    <div id="wi-list" class="space-y-2"></div>
+    <p id="no-wi" class="text-center text-gray-400 py-8 text-sm">No what-if courses added.</p>
+    <div id="wi-gpa-display" class="hidden bg-white rounded-xl shadow p-6 mt-4 text-center">
+      <div class="text-sm text-gray-500 mb-1">Projected GPA (with what-if courses)</div>
+      <div id="wi-gpa-val" class="text-5xl font-black text-yellow-500"></div>
+      <div id="wi-gpa-delta" class="text-sm mt-1"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+const GRADE_POINTS = { 'A+':4.0,'A':4.0,'A-':3.7,'B+':3.3,'B':3.0,'B-':2.7,'C+':2.3,'C':2.0,'C-':1.7,'D':1.0,'F':0.0 };
+let courses = [];
+let whatIfCourses = [];
+
+function loadFromStorage() {
+  try {
+    const saved = localStorage.getItem('gpa_courses');
+    if (saved) courses = JSON.parse(saved);
+    const saved2 = localStorage.getItem('gpa_whatif');
+    if (saved2) whatIfCourses = JSON.parse(saved2);
+  } catch(e) {}
+}
+
+function saveToStorage() {
+  try {
+    localStorage.setItem('gpa_courses', JSON.stringify(courses));
+    localStorage.setItem('gpa_whatif', JSON.stringify(whatIfCourses));
+  } catch(e) {}
+}
+
+function calcGPA(list) {
+  let totalPoints = 0, totalCredits = 0;
+  list.forEach(c => {
+    totalPoints += GRADE_POINTS[c.grade] * c.credits;
+    totalCredits += c.credits;
+  });
+  return totalCredits === 0 ? null : totalPoints / totalCredits;
+}
+
+function addCourse(isWhatIf) {
+  const nameEl = document.getElementById(isWhatIf ? 'wi-name' : 'course-name');
+  const credEl = document.getElementById(isWhatIf ? 'wi-credits' : 'course-credits');
+  const gradeEl = document.getElementById(isWhatIf ? 'wi-grade' : 'course-grade');
+  const pctEl = !isWhatIf ? document.getElementById('course-pct') : null;
+  const semEl = !isWhatIf ? document.getElementById('semester-sel') : null;
+
+  const name = nameEl.value.trim();
+  const credits = parseFloat(credEl.value);
+  const grade = gradeEl.value;
+  const pct = pctEl && pctEl.value ? parseFloat(pctEl.value) : null;
+  const semester = semEl ? semEl.value.trim() : '';
+
+  if (!name) { nameEl.focus(); nameEl.classList.add('border-red-400'); return; }
+  nameEl.classList.remove('border-red-400');
+  if (isNaN(credits) || credits <= 0) { credEl.focus(); return; }
+  if (pct !== null && (pct < 0 || pct > 100)) return;
+
+  const course = { id: Date.now(), name, credits, grade, pct, semester };
+  if (isWhatIf) {
+    whatIfCourses.push(course);
+  } else {
+    courses.push(course);
+  }
+  saveToStorage();
+  nameEl.value = '';
+  if (pctEl) pctEl.value = '';
+  render();
+}
+
+function deleteCourse(id, isWhatIf) {
+  if (isWhatIf) {
+    whatIfCourses = whatIfCourses.filter(c => c.id !== id);
+  } else {
+    courses = courses.filter(c => c.id !== id);
+  }
+  saveToStorage();
+  render();
+}
+
+function render() {
+  // GPA
+  const gpa = calcGPA(courses);
+  const gpaEl = document.getElementById('gpa-display');
+  const gpaSub = document.getElementById('gpa-sub');
+  if (gpa === null) {
+    gpaEl.textContent = '—';
+    gpaSub.textContent = '';
+  } else {
+    gpaEl.textContent = gpa.toFixed(2);
+    const totalCr = courses.reduce((s, c) => s + c.credits, 0);
+    gpaSub.textContent = totalCr + ' credit hours across ' + courses.length + ' course(s)';
+  }
+
+  // Course list (grouped by semester)
+  const listEl = document.getElementById('course-list');
+  listEl.innerHTML = '';
+  const noCourses = document.getElementById('no-courses');
+
+  if (courses.length === 0) {
+    noCourses.style.display = '';
+  } else {
+    noCourses.style.display = 'none';
+    // Group by semester
+    const semesters = {};
+    courses.forEach(c => {
+      const s = c.semester || 'Ungrouped';
+      if (!semesters[s]) semesters[s] = [];
+      semesters[s].push(c);
+    });
+    Object.entries(semesters).forEach(([sem, list]) => {
+      const semGPA = calcGPA(list);
+      const semHeader = document.createElement('div');
+      semHeader.className = 'flex items-center justify-between px-2 py-1';
+      const sh = document.createElement('h3');
+      sh.className = 'font-semibold text-gray-600 text-sm';
+      sh.textContent = sem;
+      const sg = document.createElement('span');
+      sg.className = 'text-xs text-gray-400';
+      sg.textContent = 'Semester GPA: ' + (semGPA ? semGPA.toFixed(2) : '—');
+      semHeader.appendChild(sh);
+      semHeader.appendChild(sg);
+      listEl.appendChild(semHeader);
+
+      list.forEach(c => {
+        const row = createCourseRow(c, false);
+        listEl.appendChild(row);
+      });
+    });
+  }
+
+  // What-if list
+  const wiList = document.getElementById('wi-list');
+  wiList.innerHTML = '';
+  const noWi = document.getElementById('no-wi');
+  const wiDisp = document.getElementById('wi-gpa-display');
+
+  if (whatIfCourses.length === 0) {
+    noWi.style.display = '';
+    wiDisp.classList.add('hidden');
+  } else {
+    noWi.style.display = 'none';
+    whatIfCourses.forEach(c => {
+      wiList.appendChild(createCourseRow(c, true));
+    });
+    const combined = [...courses, ...whatIfCourses];
+    const wiGPA = calcGPA(combined);
+    wiDisp.classList.remove('hidden');
+    document.getElementById('wi-gpa-val').textContent = wiGPA ? wiGPA.toFixed(2) : '—';
+    const delta = wiGPA !== null && gpa !== null ? wiGPA - gpa : null;
+    const deltaEl = document.getElementById('wi-gpa-delta');
+    if (delta !== null) {
+      deltaEl.textContent = (delta >= 0 ? '+' : '') + delta.toFixed(2) + ' from current GPA';
+      deltaEl.className = 'text-sm mt-1 ' + (delta >= 0 ? 'text-green-600' : 'text-red-600');
+    }
+  }
+}
+
+function createCourseRow(c, isWhatIf) {
+  const gp = GRADE_POINTS[c.grade];
+  const contribution = (gp * c.credits).toFixed(1);
+
+  const row = document.createElement('div');
+  row.className = 'bg-white rounded-xl shadow-sm p-4 flex flex-wrap items-center gap-3';
+
+  const nameSpan = document.createElement('div');
+  nameSpan.className = 'flex-1 min-w-[120px] font-medium text-gray-800 text-sm';
+  nameSpan.textContent = c.name;
+
+  const credSpan = document.createElement('div');
+  credSpan.className = 'text-xs text-gray-500 w-16';
+  credSpan.textContent = c.credits + ' cr';
+
+  const gradeSpan = document.createElement('div');
+  gradeSpan.className = 'font-bold text-sm ' + (gp >= 3.5 ? 'text-green-600' : gp >= 2.5 ? 'text-blue-600' : gp >= 1.5 ? 'text-yellow-600' : 'text-red-600');
+  gradeSpan.textContent = c.grade;
+
+  const pctSpan = document.createElement('div');
+  pctSpan.className = 'text-xs text-gray-400 w-12';
+  pctSpan.textContent = c.pct != null ? c.pct + '%' : '';
+
+  const contribSpan = document.createElement('div');
+  contribSpan.className = 'text-xs text-indigo-600 w-24 text-right';
+  contribSpan.textContent = gp.toFixed(1) + ' × ' + c.credits + ' = ' + contribution;
+
+  const delBtn = document.createElement('button');
+  delBtn.className = 'text-red-400 hover:text-red-600 text-xs px-2 py-1 rounded hover:bg-red-50 focus:outline-none focus:ring-1 focus:ring-red-300';
+  delBtn.textContent = 'Remove';
+  delBtn.setAttribute('aria-label', 'Remove ' + c.name);
+  delBtn.onclick = () => deleteCourse(c.id, isWhatIf);
+
+  [nameSpan, credSpan, gradeSpan, pctSpan, contribSpan, delBtn].forEach(el => row.appendChild(el));
+  return row;
+}
+
+function switchTab(tab) {
+  const isCurrent = tab === 'current';
+  document.getElementById('panel-current').classList.toggle('hidden', !isCurrent);
+  document.getElementById('panel-whatif').classList.toggle('hidden', isCurrent);
+  document.getElementById('tab-current').className = isCurrent
+    ? 'px-4 py-2 rounded-lg font-medium bg-indigo-600 text-white text-sm'
+    : 'px-4 py-2 rounded-lg font-medium bg-white text-gray-600 border border-gray-300 text-sm';
+  document.getElementById('tab-whatif').className = !isCurrent
+    ? 'px-4 py-2 rounded-lg font-medium bg-yellow-500 text-white text-sm'
+    : 'px-4 py-2 rounded-lg font-medium bg-white text-gray-600 border border-gray-300 text-sm';
+}
+
+function exportData() {
+  const data = JSON.stringify({ courses, whatIfCourses }, null, 2);
+  const blob = new Blob([data], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'gpa-data.json';
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function importData(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      const data = JSON.parse(e.target.result);
+      if (Array.isArray(data.courses)) courses = data.courses;
+      if (Array.isArray(data.whatIfCourses)) whatIfCourses = data.whatIfCourses;
+      saveToStorage();
+      render();
+    } catch(err) {
+      alert('Invalid JSON file.');
+    }
+  };
+  reader.readAsText(file);
+  event.target.value = '';
+}
+
+loadFromStorage();
+render();
+</script>
+</body>
+</html>
